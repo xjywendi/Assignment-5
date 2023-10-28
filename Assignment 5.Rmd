@@ -1,0 +1,61 @@
+---
+title: "Assignment 5"
+author: "Jiayi"
+date: '2023-10-27'
+output: html_document
+---
+
+```{r}
+
+library(fpp)
+library(fpp2)
+
+AAPL<- read.csv("AAPL.csv")
+
+AAPL$Date<-as.Date(AAPL$Date)
+View(AAPL)
+
+#Making data to time series#Will only forecast the Open price
+Open_ts <- ts(AAPL$Open, start=c(2018, 11),frequency=12)
+Open_ts
+
+head(Open_ts)
+plot(Open_ts)
+Acf(Open_ts)
+
+#Method 1
+stl_decomp <- stl(Open_ts,s.window ="periodic")
+plot(stl_decomp)
+attributes(stl_decomp)
+# Print out a seasonal adjustment
+temp<-seasadj(stl_decomp)
+# Plot a line on the graph
+plot(Open_ts)
+lines(temp, col="Red")
+# Default period forecast
+f_stl <- forecast(stl_decomp)
+# you can pass the # of period
+f_stl <- forecast(stl_decomp,h=12)#h is how many months wanna forecast
+f_stl
+plot(f_stl)
+Acf(f_stl$residuals)#something not random is happening-->points where it above the blue line
+f_stl$method#"STL +  ETS(A,Ad,N)", the A is additive
+
+#Method 2
+decomp_appl <- decompose(Open_ts)
+plot(decomp_appl)
+# Each one shows different attributes 
+attributes(decomp_appl)
+s_decomp<-seasadj(decomp_appl)#taking the seasonality out
+f_decomp<-forecast(s_decomp,h=12)
+plot(f_decomp)
+
+
+#Accuracy of the 2 method comparsion
+f_decomp <- forecast(seasadj(decomp_appl),h=12)
+f_stl <- forecast(seasadj(stl_decomp,h=12))
+accuracy(f_decomp)
+accuracy(f_stl)
+#based of the MAPE, i would use the f_stl over the f_decomp
+
+```
